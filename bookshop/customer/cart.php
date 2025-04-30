@@ -188,13 +188,6 @@ mysqli_data_seek($cart_items, 0);
                 <input type="submit" value="Send Message">
             </form>
         </div>
-        <!-- ( XSS） -->
-        <div class="summary-item1">
-            <label>RECENT MESSAGES</label>
-            <?php foreach ($messages as $msg): ?>
-                <div class="message"><?php echo $msg; ?></div> <!-- 漏洞点：直接输出用户输入，未过滤 -->
-            <?php endforeach; ?>
-        </div>
         <div class="summary-item">
             <label>TOTAL PRICE</label>
             <span id="total-price">€ <?php echo number_format($total, 2); ?></span>
