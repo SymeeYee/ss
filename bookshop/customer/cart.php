@@ -11,6 +11,14 @@ if (isset($_GET['delete'])) {
     echo "<script>alert('Item removed!'); window.location='cart.php';</script>";
 }
 
+// Update cart quantity (allow negative quantity, no validation)
+if (isset($_GET['update']) && isset($_GET['quantity'])) {
+    $cart_id = $_GET['update'];
+    $quantity = $_GET['quantity'];
+    mysqli_query($conn, "UPDATE cart SET quantity = '$quantity' WHERE id = '$cart_id'");
+    echo "<script>alert('Quantity updated!'); window.location='cart.php';</script>";
+}
+
 // Fetch user's cart
 $cart_items = mysqli_query($conn, "SELECT cart.*, books.title, books.price 
                                    FROM cart 
@@ -20,10 +28,12 @@ $cart_items = mysqli_query($conn, "SELECT cart.*, books.title, books.price
 
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Your Cart</title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
+
 <body>
     <h2>Your Cart</h2>
 
@@ -43,11 +53,13 @@ $cart_items = mysqli_query($conn, "SELECT cart.*, books.title, books.price
             $total += $subtotal;
 
             echo "<tr>";
-            echo "<td>".$row['title']."</td>"; // vulnerable to XSS
-            echo "<td>".$row['quantity']."</td>";
-            echo "<td>".$row['price']."</td>";
-            echo "<td>$".$subtotal."</td>";
-            echo "<td><a href='cart.php?delete=".$row['id']."'>Remove</a></td>"; // CSRF vulnerable
+            echo "<td>" . $row['title'] . "</td>"; // vulnerable to XSS
+            echo "<td>
+                    <input type='number' value='" . $row['quantity'] . "' onchange='updateQuantity(" . $row['id'] . ", this.value)'>
+                  </td>";
+            echo "<td>" . $row['price'] . "</td>";
+            echo "<td>$" . $subtotal . "</td>";
+            echo "<td><a href='cart.php?delete=" . $row['id'] . "'>Remove</a></td>"; // CSRF vulnerable
             echo "</tr>";
         }
         ?>
@@ -60,5 +72,12 @@ $cart_items = mysqli_query($conn, "SELECT cart.*, books.title, books.price
     </form>
 
     <p><a href="explore.php">Continue Shopping</a></p>
+
+    <script>
+        function updateQuantity(cartId, quantity) {
+            window.location.href = 'cart.php?update=' + cartId + '&quantity=' + quantity;
+        }
+    </script>
 </body>
-</html>
+
+</html> 
