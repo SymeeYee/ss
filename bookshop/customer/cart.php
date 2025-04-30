@@ -19,6 +19,14 @@ if (isset($_GET['update']) && isset($_GET['quantity'])) {
     echo "<script>alert('Quantity updated!'); window.location='cart.php';</script>";
 }
 
+// Simulate receiving a message and inserting it into the database (with injection vulnerability)
+if (isset($_POST['message'])) {
+    $message = $_POST['message'];
+    // No input filtering, directly insert into the database
+    mysqli_query($conn, "INSERT INTO seller_messages (user_id, message) VALUES ('$user_id', '$message')");
+    echo "<script>alert('Message sent!'); window.location='cart.php';</script>";
+}
+
 // Fetch user's cart
 $cart_items = mysqli_query($conn, "SELECT cart.*, books.title, books.price 
                                    FROM cart 
@@ -119,7 +127,8 @@ mysqli_data_seek($cart_items, 0);
             margin-bottom: 5px;
         }
 
-       .summary-item input {
+       .summary-item input,
+       .summary-item textarea {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
@@ -173,8 +182,18 @@ mysqli_data_seek($cart_items, 0);
             <span id="item-total">€ <?php echo number_format($total, 2); ?></span>
         </div>
         <div class="summary-item">
-            <label>GIVE CODE</label>
-            <input type="text" placeholder="Enter your code">
+            <label>MESSAGE TO SELLER</label>
+            <form action="cart.php" method="post">
+                <textarea name="message" placeholder="Type your message here"></textarea>
+                <input type="submit" value="Send Message">
+            </form>
+        </div>
+        <!-- ( XSS） -->
+        <div class="summary-item1">
+            <label>RECENT MESSAGES</label>
+            <?php foreach ($messages as $msg): ?>
+                <div class="message"><?php echo $msg; ?></div> <!-- 漏洞点：直接输出用户输入，未过滤 -->
+            <?php endforeach; ?>
         </div>
         <div class="summary-item">
             <label>TOTAL PRICE</label>
@@ -213,7 +232,7 @@ mysqli_data_seek($cart_items, 0);
             itemTotalElement.textContent = `€ ${newTotal.toFixed(2)}`;
             totalPriceElement.textContent = `€ ${newTotal.toFixed(2)}`;
 
-            // 发送请求更新数据库
+            // Send a request to update the database
             const cartId = cartData[index].id;
             window.location.href = `cart.php?update=${cartId}&quantity=${quantity}`;
         }
