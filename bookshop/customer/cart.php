@@ -24,60 +24,206 @@ $cart_items = mysqli_query($conn, "SELECT cart.*, books.title, books.price
                                    FROM cart 
                                    JOIN books ON cart.book_id = books.id 
                                    WHERE cart.user_id = '$user_id'");
+
+// Calculate total
+$total = 0;
+$itemCount = 0;
+$cartData = [];
+while ($row = mysqli_fetch_assoc($cart_items)) {
+    $subtotal = $row['price'] * $row['quantity'];
+    $total += $subtotal;
+    $itemCount++;
+    $cartData[] = $row;
+}
+// Reset result pointer to start
+mysqli_data_seek($cart_items, 0);
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Cart</title>
-    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+       .cart-items {
+            flex: 2;
+        }
+
+       .summary {
+            flex: 1;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+       .cart-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+       .cart-item-info {
+            flex: 1;
+        }
+
+       .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+       .quantity-controls button {
+            padding: 5px 10px;
+            background-color: #eee;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+       .quantity-controls input {
+            width: 40px;
+            text-align: center;
+        }
+
+       .cart-item-price {
+            font-weight: bold;
+        }
+
+       .delete-btn {
+            color: #ff0000;
+            cursor: pointer;
+        }
+
+       .summary-item {
+            margin-bottom: 15px;
+        }
+
+       .summary-item label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+       .summary-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+
+       .checkout-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 
 <body>
-    <h2>Your Cart</h2>
-
-    <table border="1" cellpadding="5" cellspacing="0">
-        <tr>
-            <th>Title</th>
-            <th>Quantity</th>
-            <th>Price (Each)</th>
-            <th>Subtotal</th>
-            <th>Action</th>
-        </tr>
-
+    <div class="cart-items">
+        <h2>Your Cart</h2>
+        <div class="item-count">
+            <?php echo "$itemCount items"; ?>
+        </div>
         <?php
-        $total = 0;
-        while ($row = mysqli_fetch_assoc($cart_items)) {
+        foreach ($cartData as $index => $row) {
             $subtotal = $row['price'] * $row['quantity'];
-            $total += $subtotal;
-
-            echo "<tr>";
-            echo "<td>" . $row['title'] . "</td>"; // vulnerable to XSS
-            echo "<td>
-                    <input type='number' value='" . $row['quantity'] . "' onchange='updateQuantity(" . $row['id'] . ", this.value)'>
-                  </td>";
-            echo "<td>" . $row['price'] . "</td>";
-            echo "<td>$" . $subtotal . "</td>";
-            echo "<td><a href='cart.php?delete=" . $row['id'] . "'>Remove</a></td>"; // CSRF vulnerable
-            echo "</tr>";
+        ?>
+            <div class="cart-item">
+                <div class="cart-item-info">
+                    <h4><?php echo $row['title']; ?></h4>
+                    <div class="quantity-controls">
+                        <button onclick="changeQuantity(<?php echo $index; ?>, -1)"><i class="fas fa-minus"></i></button>
+                        <input type="number" value="<?php echo $row['quantity']; ?>" onchange="updateQuantity(<?php echo $index; ?>, this.value)">
+                        <button onclick="changeQuantity(<?php echo $index; ?>, 1)"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+                <div class="cart-item-price">€ <span id="subtotal-<?php echo $index; ?>"><?php echo number_format($subtotal, 2); ?></span></div>
+                <div class="delete-btn" onclick="deleteItem(<?php echo $row['id']; ?>)"><i class="fas fa-times"></i></div>
+            </div>
+        <?php
         }
         ?>
-    </table>
+        <a href="explore.php" class="back-to-shop">← Back to shop</a>
+    </div>
 
-    <h3>Total: $<?php echo $total; ?></h3>
-
-    <form action="checkout.php" method="post">
-        <button type="submit" name="checkout">Proceed to Checkout</button>
-    </form>
-
-    <p><a href="explore.php">Continue Shopping</a></p>
+    <div class="summary">
+        <h3>Summary</h3>
+        <div class="summary-item">
+            <label>ITEMS</label>
+            <span id="item-count"><?php echo $itemCount; ?></span>
+            <span id="item-total">€ <?php echo number_format($total, 2); ?></span>
+        </div>
+        <div class="summary-item">
+            <label>GIVE CODE</label>
+            <input type="text" placeholder="Enter your code">
+        </div>
+        <div class="summary-item">
+            <label>TOTAL PRICE</label>
+            <span id="total-price">€ <?php echo number_format($total, 2); ?></span>
+        </div>
+        <button class="checkout-btn">CHECKOUT</button>
+    </div>
 
     <script>
-        function updateQuantity(cartId, quantity) {
-            window.location.href = 'cart.php?update=' + cartId + '&quantity=' + quantity;
+        const cartData = <?php echo json_encode($cartData); ?>;
+
+        function changeQuantity(index, delta) {
+            const input = document.querySelector(`input[onchange*='updateQuantity(${index},']`);
+            let quantity = parseInt(input.value);
+            quantity += delta;
+            input.value = quantity;
+            updateQuantity(index, quantity);
+        }
+
+        function updateQuantity(index, quantity) {
+            const price = cartData[index].price;
+            const subtotal = price * quantity;
+            const subtotalElement = document.getElementById(`subtotal-${index}`);
+            subtotalElement.textContent = subtotal.toFixed(2);
+
+            let newTotal = 0;
+            const quantityInputs = document.querySelectorAll('.quantity-controls input');
+            quantityInputs.forEach((input, i) => {
+                const itemQuantity = parseInt(input.value);
+                const itemPrice = cartData[i].price;
+                newTotal += itemPrice * itemQuantity;
+            });
+
+            const itemTotalElement = document.getElementById('item-total');
+            const totalPriceElement = document.getElementById('total-price');
+            itemTotalElement.textContent = `€ ${newTotal.toFixed(2)}`;
+            totalPriceElement.textContent = `€ ${newTotal.toFixed(2)}`;
+
+            // 发送请求更新数据库
+            const cartId = cartData[index].id;
+            window.location.href = `cart.php?update=${cartId}&quantity=${quantity}`;
+        }
+
+        function deleteItem(itemId) {
+            if (confirm('Are you sure you want to remove this item?')) {
+                window.location.href = `cart.php?delete=${itemId}`;
+            }
         }
     </script>
 </body>
 
-</html> 
+</html>    
