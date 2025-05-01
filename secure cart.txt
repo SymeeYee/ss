@@ -15,12 +15,16 @@ if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// Function to check if a cart item belongs to the current user
+function isCartItemBelongsToUser($conn, $cart_id, $user_id) {
+    $checkQuery = mysqli_query($conn, "SELECT * FROM cart WHERE id = '$cart_id' AND user_id = '$user_id'");
+    return mysqli_num_rows($checkQuery) > 0;
+}
+
 // Delete a cart item
 if (isset($_GET['delete']) && isset($_GET['csrf_token']) && $_GET['csrf_token'] === $_SESSION['csrf_token']) {
     $cart_id = $_GET['delete'];
-    // Check if the item belongs to the current user
-    $checkQuery = mysqli_query($conn, "SELECT * FROM cart WHERE id = '$cart_id' AND user_id = '$user_id'");
-    if (mysqli_num_rows($checkQuery) > 0) {
+    if (isCartItemBelongsToUser($conn, $cart_id, $user_id)) {
         mysqli_query($conn, "DELETE FROM cart WHERE id = '$cart_id'");
         echo "<script>alert('Item removed!'); window.location='cart.php';</script>";
     } else {
@@ -36,9 +40,7 @@ if (isset($_GET['update']) && isset($_GET['quantity']) && isset($_GET['csrf_toke
     if (filter_var($quantity, FILTER_VALIDATE_INT, array("options" => array("min_range" => 1))) === false) {
         echo "<script>alert('Invalid quantity!'); window.location='cart.php';</script>";
     } else {
-        // Check if the item belongs to the current user
-        $checkQuery = mysqli_query($conn, "SELECT * FROM cart WHERE id = '$cart_id' AND user_id = '$user_id'");
-        if (mysqli_num_rows($checkQuery) > 0) {
+        if (isCartItemBelongsToUser($conn, $cart_id, $user_id)) {
             mysqli_query($conn, "UPDATE cart SET quantity = '$quantity' WHERE id = '$cart_id'");
             echo "<script>alert('Quantity updated!'); window.location='cart.php';</script>";
         } else {
