@@ -22,9 +22,14 @@ if (isset($_GET['update']) && isset($_GET['quantity'])) {
 // Simulate receiving a message and inserting it into the database (with injection vulnerability)
 if (isset($_POST['message'])) {
     $message = $_POST['message'];
-    // No input filtering, directly insert into the database
-    mysqli_query($conn, "INSERT INTO seller_messages (user_id, message) VALUES ('$user_id', '$message')");
-    echo "<script>alert('Message sent!'); window.location='cart.php';</script>";
+    // 检查是否包含 XSS 脚本
+    if (preg_match('/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i', $message)) {
+        echo "<script>alert('hahaha ,U got XSS injection'); window.location='cart.php';</script>";
+    } else {
+        // No input filtering, directly insert into the database
+        mysqli_query($conn, "INSERT INTO seller_messages (user_id, message) VALUES ('$user_id', '$message')");
+        echo "<script>alert('Message sent!'); window.location='cart.php';</script>";
+    }
 }
 
 // Fetch user's cart
@@ -235,6 +240,17 @@ mysqli_data_seek($cart_items, 0);
                 window.location.href = `cart.php?delete=${itemId}`;
             }
         }
+
+        // 检测 XSS 注入
+        document.addEventListener('DOMContentLoaded', function() {
+            const messages = document.querySelectorAll('.summary-item textarea[name="message"]');
+            messages.forEach(function(message) {
+                const value = message.value;
+                if (/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i.test(value)) {
+                    alert('hahaha ,U got XSS injection');
+                }
+            });
+        });
     </script>
 </body>
 
