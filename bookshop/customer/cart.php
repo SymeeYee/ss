@@ -192,7 +192,7 @@ mysqli_data_seek($cart_items, 0);
             <label>TOTAL PRICE</label>
             <span id="total-price">€ <?php echo number_format($total, 2); ?></span>
         </div>
-        <button class="checkout-btn">CHECKOUT</button>
+        <button class="checkout-btn" onclick="window.location.href='checkout.php'">CHECKOUT</button>
     </div>
 
     <script>
