@@ -2,12 +2,12 @@
 include '../db.php';
 session_start();
 
-// 生成 CSRF 令牌
+// Create a CSRF token
 if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// 验证并清理输入
+// Validate and sanitize input
 $book_id = isset($_GET['id']) ? filter_var($_GET['id'], FILTER_VALIDATE_INT) : null;
 if ($book_id === false || $book_id === null) {
     echo "<script>alert('Invalid book ID!'); window.location='explore.php';</script>";
@@ -17,7 +17,7 @@ if ($book_id === false || $book_id === null) {
 $book = null;
 $book_data = [];
 if ($book_id) {
-    // 使用预处理语句防止 SQL 注入
+    // Use prepared statements to prevent SQL injection
     $stmt = mysqli_prepare($conn, "SELECT * FROM books WHERE id =?");
     mysqli_stmt_bind_param($stmt, "i", $book_id);
     mysqli_stmt_execute($stmt);
@@ -26,29 +26,29 @@ if ($book_id) {
     mysqli_stmt_close($stmt);
 }
 
-// 处理添加到购物车的请求
+// Handle the request to add to the cart
 if (isset($_POST['add_to_cart']) && $book_id) {
-    // 验证 CSRF 令牌
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+    // Validate the CSRF token
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token']!== $_SESSION['csrf_token']) {
         echo "<script>alert('Invalid CSRF token!'); window.location='book_detail.php?id=$book_id';</script>";
         exit;
     }
 
-    // 验证用户是否登录
+    // Validate if the user is logged in
     if (!isset($_SESSION['user_id'])) {
         echo "<script>alert('Please log in to add items to the cart!'); window.location='login.php';</script>";
         exit;
     }
     $user_id = $_SESSION['user_id'];
 
-    // 验证并清理数量输入
+    // Validate and sanitize the quantity input
     $quantity = isset($_POST['quantity']) ? filter_var($_POST['quantity'], FILTER_VALIDATE_INT) : 1;
     if ($quantity === false || $quantity < 1) {
         echo "<script>alert('Invalid quantity!'); window.location='book_detail.php?id=$book_id';</script>";
         exit;
     }
 
-    // 使用预处理语句插入数据到购物车
+    // Use prepared statements to insert data into the cart
     $stmt = mysqli_prepare($conn, "INSERT INTO cart (user_id, book_id, quantity) VALUES (?,?,?)");
     mysqli_stmt_bind_param($stmt, "iii", $user_id, $book_id, $quantity);
     if (mysqli_stmt_execute($stmt)) {
@@ -86,4 +86,4 @@ if (isset($_POST['add_to_cart']) && $book_id) {
 
     <p><a href="explore.php">Back to Explore</a></p>
 </body>
-</html>    
+</html>
