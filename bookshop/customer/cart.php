@@ -22,7 +22,7 @@ if (isset($_GET['update']) && isset($_GET['quantity'])) {
 // Simulate receiving a message and inserting it into the database (with injection vulnerability)
 if (isset($_POST['message'])) {
     $message = $_POST['message'];
-    // 检查是否包含 XSS 脚本
+    // check XSS script
     if (preg_match('/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i', $message)) {
         echo "<script>alert('hahaha ,U got XSS injection'); window.location='cart.php';</script>";
     } else {
@@ -69,10 +69,18 @@ mysqli_data_seek($cart_items, 0);
 
         body {
             font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+       .header1 {
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: #AEAEAE;
+        }
+
+       .main-content {
             display: flex;
             gap: 20px;
-            padding: 20px;
-            flex-direction: column;
         }
 
        .cart-items {
@@ -153,18 +161,21 @@ mysqli_data_seek($cart_items, 0);
        .clickjacking-container {
             position: relative;
             margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
         }
 
        .clickjacking-image {
-            width: 100%;
+            width: 300px;
             height: auto;
         }
 
        .clickjacking-overlay {
             position: absolute;
             top: 0;
-            left: 0;
-            width: 100%;
+            left: auto;
+            right: 0;
+            width: 300px;
             height: 100%;
             opacity: 0;
             cursor: pointer;
@@ -173,56 +184,58 @@ mysqli_data_seek($cart_items, 0);
 </head>
 
 <body>
-    <div class="cart-items">
-        <h2>Your Cart</h2>
-        <div class="item-count">
-            <?php echo "$itemCount items"; ?>
-        </div>
-        <?php
-        foreach ($cartData as $index => $row) {
-            $subtotal = $row['price'] * $row['quantity'];
-        ?>
-            <div class="cart-item">
-                <div class="cart-item-info">
-                    <h4><?php echo $row['title']; ?></h4>
-                    <div class="quantity-controls">
-                        <button onclick="changeQuantity(<?php echo $index; ?>, -1)"><i class="fas fa-minus"></i></button>
-                        <input type="number" value="<?php echo $row['quantity']; ?>" onchange="updateQuantity(<?php echo $index; ?>, this.value)">
-                        <button onclick="changeQuantity(<?php echo $index; ?>, 1)"><i class="fas fa-plus"></i></button>
-                    </div>
-                </div>
-                <div class="cart-item-price">€ <span id="subtotal-<?php echo $index; ?>"><?php echo number_format($subtotal, 2); ?></span></div>
-                <div class="delete-btn" onclick="deleteItem(<?php echo $row['id']; ?>)"><i class="fas fa-times"></i></div>
+    <div class="header1">
+        <h2>🛒Your Cart 🛒</h2>
+    </div>
+    <div class="main-content">
+        <div class="cart-items">
+            <div class="item-count">
+                <?php echo "$itemCount items"; ?>
             </div>
-        <?php
-        }
-        ?>
-        <a href="explore.php" class="back-to-shop">← Back to shop</a>
+            <?php
+            foreach ($cartData as $index => $row) {
+                $subtotal = $row['price'] * $row['quantity'];
+            ?>
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <h4><?php echo $row['title']; ?></h4>
+                        <div class="quantity-controls">
+                            <button onclick="changeQuantity(<?php echo $index; ?>, -1)"><i class="fas fa-minus"></i></button>
+                            <input type="number" value="<?php echo $row['quantity']; ?>" onchange="updateQuantity(<?php echo $index; ?>, this.value)">
+                            <button onclick="changeQuantity(<?php echo $index; ?>, 1)"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <div class="cart-item-price">€ <span id="subtotal-<?php echo $index; ?>"><?php echo number_format($subtotal, 2); ?></span></div>
+                    <div class="delete-btn" onclick="deleteItem(<?php echo $row['id']; ?>)"><i class="fas fa-times"></i></div>
+                </div>
+            <?php
+            }
+            ?>
+            <a href="explore.php" class="back-to-shop">← Back to shop</a>
+        </div>
+        <div class="summary">
+            <h3>Summary</h3>
+            <div class="summary-item">
+                <label>ITEMS</label>
+                <span id="item-count"><?php echo $itemCount; ?></span>
+                <span id="item-total">€ <?php echo number_format($total, 2); ?></span>
+            </div>
+            <div class="summary-item">
+                <label>MESSAGE TO SELLER</label>
+                <form action="cart.php" method="post">
+                    <textarea name="message" placeholder="Type your message here"></textarea>
+                    <input type="submit" value="Send Message">
+                </form>
+            </div>
+            <div class="summary-item">
+                <label>TOTAL PRICE</label>
+                <span id="total-price">€ <?php echo number_format($total, 2); ?></span>
+            </div>
+            <button class="checkout-btn" onclick="window.location.href='checkout.php'">CHECKOUT</button>
+        </div>
     </div>
-
-    <div class="summary">
-        <h3>Summary</h3>
-        <div class="summary-item">
-            <label>ITEMS</label>
-            <span id="item-count"><?php echo $itemCount; ?></span>
-            <span id="item-total">€ <?php echo number_format($total, 2); ?></span>
-        </div>
-        <div class="summary-item">
-            <label>MESSAGE TO SELLER</label>
-            <form action="cart.php" method="post">
-                <textarea name="message" placeholder="Type your message here"></textarea>
-                <input type="submit" value="Send Message">
-            </form>
-        </div>
-        <div class="summary-item">
-            <label>TOTAL PRICE</label>
-            <span id="total-price">€ <?php echo number_format($total, 2); ?></span>
-        </div>
-        <button class="checkout-btn" onclick="window.location.href='checkout.php'">CHECKOUT</button>
-    </div>
-
     <div class="clickjacking-container">
-        <img class="clickjacking-image" src="https://picsum.photos/800/400" alt="Random Image">
+        <img class="clickjacking-image" src="https://picsum.photos/300/400" alt="Random Image">
         <a href="https://fakewebsite.example" class="clickjacking-overlay"></a>
     </div>
 
@@ -267,7 +280,7 @@ mysqli_data_seek($cart_items, 0);
             }
         }
 
-        // 检测 XSS 注入
+        // test xss
         document.addEventListener('DOMContentLoaded', function() {
             const messages = document.querySelectorAll('.summary-item textarea[name="message"]');
             messages.forEach(function(message) {
