@@ -75,7 +75,7 @@ mysqli_data_seek($cart_items, 0);
        .header1 {
             text-align: center;
             margin-bottom: 20px;
-            background-color: #AEAEAE;
+            background-color: #C5C5C5;
         }
 
        .main-content {
@@ -236,7 +236,7 @@ mysqli_data_seek($cart_items, 0);
     </div>
     <div class="clickjacking-container">
         <img class="clickjacking-image" src="https://picsum.photos/300/400" alt="Random Image">
-        <a href="https://fakewebsite.example" class="clickjacking-overlay"></a>
+        <a href="fakewebsite.php" class="clickjacking-overlay"></a>
     </div>
 
     <script>
